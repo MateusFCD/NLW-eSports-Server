@@ -1,13 +1,53 @@
-import express from 'express'
+import express, { response } from "express";
 
-const app = express()
+import { PrismaClient } from "@prisma/client";
 
-app.get('/ads', (request, response) => {
-    return response.json([
-        {id: 1, name: 'Anúncio 1'},
-        {id: 2, name: 'Anúncio 2'},
-        {id: 3, name: 'Anúncio 3'},
-    ])
-})
+const app = express();
+const prisma = new PrismaClient();
 
-app.listen(3333)
+app.get("/games", async (request, response) => {
+  const games = await prisma.game.findMany({
+    include: {
+      _count: {
+        select: {
+          ads: true,
+        },
+      },
+    },
+  });
+
+  return response.json([games]);
+});
+
+app.post("/ads", (request, response) => {
+  return response.json([]);
+});
+
+app.get("/ads/:id/discord", (request, response) => {
+  return response.json([]);
+});
+
+app.get("/games/:id/ads", async (request, response) => {
+  const gameId = request.params.id;
+
+  const ads = await prisma.ad.findMany({
+    select: {
+      id: true,
+      name: true,
+      weekDays: true,
+      useVoiceChannel: true,
+      yearsPlaying: true,
+      hourStart: true,
+      hourEnd: true,
+    },
+    where: {
+      gameId,
+    },
+    orderBy: {
+      createAt: "desc",
+    },
+  });
+  return response.json(ads);
+});
+
+app.listen(3333);
